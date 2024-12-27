@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>3D Particle Effect - Earth to Fireworks</title>
     <style>
+        /* 确保 html 和 body 占满整个屏幕 */
         html, body {
             margin: 0;
             padding: 0;
@@ -13,6 +14,7 @@
             overflow: hidden;
             background-color: black;
         }
+        /* 确保 canvas 占满整个屏幕 */
         canvas {
             display: block;
             position: absolute;
@@ -20,52 +22,79 @@
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 1;
+            z-index: 1; /* 粒子系统在上层 */
         }
         #centerButton {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 15vmin;
-            height: 15vmin;
-            background: linear-gradient(135deg, rgba(255, 87, 34, 0.8), rgba(255, 193, 7, 0.8));
-            backdrop-filter: blur(10px);
+            width: 15vmin; /* 使用视口最小单位，确保按钮大小适配 */
+            height: 15vmin; /* 保持宽高一致，形成圆形 */
+            background: linear-gradient(135deg, rgba(255, 87, 34, 0.8), rgba(255, 193, 7, 0.8)); /* 半透明磨砂渐变 */
+            backdrop-filter: blur(10px); /* 磨砂效果 */
             border: none;
-            border-radius: 50%;
-            box-shadow: 0 0 20px rgba(255, 87, 34, 0.8);
+            border-radius: 50%; /* 圆形 */
+            box-shadow: 0 0 20px rgba(255, 87, 34, 0.8); /* 添加阴影 */
             cursor: pointer;
-            display: none;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            z-index: 2;
+            display: none; /* 初始隐藏 */
+            transition: transform 0.3s ease, box-shadow 0.3s ease; /* 添加动画效果 */
+            z-index: 2; /* 按钮在最上层 */
         }
         #centerButton:hover {
-            transform: translate(-50%, -50%) scale(1.1);
-            box-shadow: 0 0 30px rgba(255, 87, 34, 1);
+            transform: translate(-50%, -50%) scale(1.1); /* 悬停时放大 */
+            box-shadow: 0 0 30px rgba(255, 87, 34, 1); /* 悬停时阴影增强 */
         }
         #logo {
             position: absolute;
-            bottom: 5vh;
+            bottom: 5vh; /* 使用视口高度单位 */
             left: 50%;
             transform: translateX(-50%);
-            width: 10vmin;
-            height: 10vmin;
+            width: 10vmin; /* 使用视口最小单位 */
+            height: 10vmin; /* 保持宽高一致 */
             border-radius: 50%;
             cursor: pointer;
-            display: none;
-            z-index: 2;
+            display: none; /* 初始隐藏 */
+            z-index: 2; /* Logo在最上层 */
         }
-        #videoPlayer {
-            position: fixed;
+        #background {
+            position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            display: none;
-            z-index: 0;
-            background: transparent;
-            object-fit: cover;
+            background-image: url('./background.jpg'); /* 背景图路径 */
+            background-size: cover; /* 背景图自适应全屏 */
+            background-position: center;
+            display: none; /* 初始隐藏 */
+            z-index: 0; /* 背景图在底层 */
         }
+        #videoPlayer {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%; /* 视频宽度 */
+            max-width: 800px; /* 最大宽度 */
+            display: none; /* 初始隐藏 */
+            z-index: 3; /* 视频播放器在Logo和背景图之上 */
+            background: black;
+            border: 2px solid white;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+        #closeButton {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: red;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            z-index: 4; /* 关闭按钮在视频播放器之上 */
+            display: none; /* 初始隐藏 */
+        }
+        /* 媒体查询：适配小屏幕设备 */
         @media (max-width: 768px) {
             #centerButton {
                 width: 20vmin;
@@ -75,6 +104,9 @@
                 width: 15vmin;
                 height: 15vmin;
             }
+            #videoPlayer {
+                width: 90%; /* 小屏幕上视频宽度更大 */
+            }
         }
     </style>
 </head>
@@ -82,73 +114,82 @@
     <canvas></canvas>
     <button id="centerButton"></button>
     <img id="logo" src="./logo.png" alt="Logo">
-    <video id="videoPlayer" controls autoplay muted>
+    <div id="background"></div>
+    <video id="videoPlayer" controls>
         <source src="./video.mp4" type="video/mp4">
         Your browser does not support the video tag.
     </video>
+    <button id="closeButton">关闭视频</button>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three/examples/js/controls/OrbitControls.js"></script>
     <script>
+        // 初始化场景、相机和渲染器
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setClearColor(0x000000);
+        renderer.setClearColor(0x000000); // 设置背景为黑色
         document.body.appendChild(renderer.domElement);
 
+        // 添加轨道控制器
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
+        controls.enableDamping = true; // 启用阻尼效果
+        controls.dampingFactor = 0.05; // 阻尼系数
 
-        const particlesCount = 10000;
+        // 创建粒子系统
+        const particlesCount = 10000; // 粒子数量
         const particlesGeometry = new THREE.BufferGeometry();
         const posArray = new Float32Array(particlesCount * 3);
-        const colorArray = new Float32Array(particlesCount * 3);
-        const initialPositions = new Float32Array(particlesCount * 3);
-        const targetPositions = new Float32Array(particlesCount * 3);
+        const colorArray = new Float32Array(particlesCount * 3); // 粒子颜色数组
+        const initialPositions = new Float32Array(particlesCount * 3); // 初始位置
+        const targetPositions = new Float32Array(particlesCount * 3); // 目标位置
 
+        // 初始化粒子位置和颜色
         for (let i = 0; i < particlesCount * 3; i += 3) {
             const valueX = (Math.random() - 0.5) * 20;
-            const valueY = (Math.random() - 0.5) * 20 + 15;
+            const valueY = (Math.random() - 0.5) * 20 + 15; // 向上移动15格
             const valueZ = (Math.random() - 0.5) * 20;
             posArray[i] = valueX;
             posArray[i + 1] = valueY;
             posArray[i + 2] = valueZ;
-            initialPositions[i] = valueX;
+            initialPositions[i] = valueX; // 保存初始位置
             initialPositions[i + 1] = valueY;
             initialPositions[i + 2] = valueZ;
-            targetPositions[i] = valueX;
+            targetPositions[i] = valueX; // 初始目标位置为随机位置
             targetPositions[i + 1] = valueY;
             targetPositions[i + 2] = valueZ;
 
-            colorArray[i] = Math.random();
-            colorArray[i + 1] = Math.random();
-            colorArray[i + 2] = Math.random();
+            // 为粒子设置随机颜色
+            colorArray[i] = Math.random(); // R
+            colorArray[i + 1] = Math.random(); // G
+            colorArray[i + 2] = Math.random(); // B
         }
 
         particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-        particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colorArray, 3));
+        particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colorArray, 3)); // 设置颜色属性
 
         const particlesMaterial = new THREE.PointsMaterial({
             size: 0.1,
-            vertexColors: true
+            vertexColors: true // 启用顶点颜色
         });
 
         const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
         scene.add(particlesMesh);
 
+        // 设置相机位置
         camera.position.z = 30;
 
+        // 定义地球的空间排列
         function createEarthPositions() {
             const positions = [];
-            const radius = 10;
-            for (let lat = -90; lat <= 90; lat += 5) {
-                for (let lon = -180; lon <= 180; lon += 5) {
-                    const phi = (90 - lat) * (Math.PI / 180);
-                    const theta = (lon + 90) * (Math.PI / 180);
+            const radius = 10; // 地球半径
+            for (let lat = -90; lat <= 90; lat += 5) { // 纬度
+                for (let lon = -180; lon <= 180; lon += 5) { // 经度
+                    const phi = (90 - lat) * (Math.PI / 180); // 纬度转弧度
+                    const theta = (lon + 90) * (Math.PI / 180); // 经度转弧度
 
                     const x = radius * Math.sin(phi) * Math.cos(theta);
-                    const y = radius * Math.cos(phi) + 15;
+                    const y = radius * Math.cos(phi) + 15; // 向上移动15格
                     const z = radius * Math.sin(phi) * Math.sin(theta);
 
                     positions.push(x, y, z);
@@ -157,15 +198,16 @@
             return positions;
         }
 
+        // 定义烟花爆炸的粒子位置（球形扩散）
         function createFireworksPositions() {
             const positions = [];
-            const explosionRadius = 20;
+            const explosionRadius = 20; // 爆炸半径
             for (let i = 0; i < particlesCount; i++) {
-                const phi = Math.acos(2 * Math.random() - 1);
-                const theta = Math.random() * 2 * Math.PI;
+                const phi = Math.acos(2 * Math.random() - 1); // 随机角度
+                const theta = Math.random() * 2 * Math.PI; // 随机角度
 
                 const x = explosionRadius * Math.sin(phi) * Math.cos(theta);
-                const y = explosionRadius * Math.sin(phi) * Math.sin(theta) + 15;
+                const y = explosionRadius * Math.sin(phi) * Math.sin(theta) + 15; // 向上移动15格
                 const z = explosionRadius * Math.cos(phi);
 
                 positions.push(x, y, z);
@@ -173,22 +215,29 @@
             return positions;
         }
 
+        // 定义粒子汇聚到屏幕中心的位置
         function createConvergePositions() {
             const positions = [];
-            const centerX = 0;
-            const centerY = 15;
-            const centerZ = 0;
+            const centerX = 0; // 屏幕中心 X
+            const centerY = 15; // 屏幕中心 Y，向上移动15格
+            const centerZ = 0; // 屏幕中心 Z
             for (let i = 0; i < particlesCount; i++) {
                 positions.push(centerX, centerY, centerZ);
             }
             return positions;
         }
 
+        // 生成地球的目标位置
         const earthPositions = createEarthPositions();
+
+        // 生成烟花爆炸的目标位置
         const fireworksPositions = createFireworksPositions();
+
+        // 生成汇聚到屏幕中心的目标位置
         const convergePositions = createConvergePositions();
 
-        let currentState = 'earth';
+        // 将目标位置赋值给粒子
+        let currentState = 'earth'; // 当前状态
         function setTargetPositions(positions) {
             for (let i = 0; i < particlesCount * 3; i += 3) {
                 const index = (i % positions.length);
@@ -198,29 +247,34 @@
             }
         }
 
+        // 初始化显示地球
         setTargetPositions(earthPositions);
 
-        let isExploding = false;
-        let isConverging = false;
+        // 动画循环
+        let isExploding = false; // 是否正在爆炸
+        let isConverging = false; // 是否正在汇聚
         function animate() {
             requestAnimationFrame(animate);
 
+            // 更新粒子位置，使其逐渐向目标位置移动
             const positions = particlesGeometry.attributes.position.array;
             for (let i = 0; i < particlesCount * 3; i++) {
-                positions[i] += (targetPositions[i] - positions[i]) * 0.05;
+                positions[i] += (targetPositions[i] - positions[i]) * 0.05; /* 降低移动速度 */
             }
             particlesGeometry.attributes.position.needsUpdate = true;
 
+            // 烟花爆炸模式下粒子颜色闪烁
             if (isExploding) {
                 const colors = particlesGeometry.attributes.color.array;
                 for (let i = 0; i < colors.length; i += 3) {
-                    colors[i] = Math.random();
-                    colors[i + 1] = Math.random();
-                    colors[i + 2] = Math.random();
+                    colors[i] = Math.random(); /* R */
+                    colors[i + 1] = Math.random(); /* G */
+                    colors[i + 2] = Math.random(); /* B */
                 }
                 particlesGeometry.attributes.color.needsUpdate = true;
             }
 
+            // 如果正在汇聚，检查是否所有粒子都到达目标位置
             if (isConverging) {
                 let allConverged = true;
                 for (let i = 0; i < particlesCount * 3; i++) {
@@ -232,58 +286,65 @@
                 if (allConverged) {
                     isConverging = false;
                     isExploding = false;
-                    document.getElementById('centerButton').style.display = 'block';
+                    document.getElementById('centerButton').style.display = 'block'; /* 显示按钮 */
                 }
             }
 
-            controls.update();
+            controls.update(); /* 更新轨道控制器 */
             renderer.render(scene, camera);
         }
 
         animate();
 
+        // 处理点击事件
         document.addEventListener('click', () => {
             if (currentState === 'earth') {
+                // 切换到烟花爆炸
                 setTargetPositions(fireworksPositions);
                 currentState = 'fireworks';
-                isExploding = true;
+                isExploding = true; /* 进入爆炸模式 */
 
+                // 延迟3秒后开始汇聚到屏幕中心
                 setTimeout(() => {
                     setTargetPositions(convergePositions);
-                    isConverging = true;
-                }, 3000);
+                    isConverging = true; /* 进入汇聚模式 */
+                }, 3000); /* 3秒后开始汇聚 */
             }
         });
 
+        // 按钮点击事件
         document.getElementById('centerButton').addEventListener('click', () => {
-            document.body.style.backgroundImage = 'url("./background.jpg")';
-            document.body.style.backgroundSize = 'cover';
-            document.body.style.backgroundPosition = 'center';
+            // 显示背景图和Logo
+            document.getElementById('background').style.display = 'block';
+            document.getElementById('logo').style.display = 'block';
 
+            // 隐藏按钮和粒子效果
             document.getElementById('centerButton').style.display = 'none';
             renderer.domElement.style.display = 'none';
-
-            document.getElementById('logo').style.display = 'block';
         });
 
+        // Logo点击事件
         document.getElementById('logo').addEventListener('click', () => {
+            // 显示并播放视频
             const videoPlayer = document.getElementById('videoPlayer');
             videoPlayer.style.display = 'block';
-            videoPlayer.muted = false;
-
-            if (videoPlayer.requestFullscreen) {
-                videoPlayer.requestFullscreen();
-            } else if (videoPlayer.mozRequestFullScreen) {
-                videoPlayer.mozRequestFullScreen();
-            } else if (videoPlayer.webkitRequestFullscreen) {
-                videoPlayer.webkitRequestFullscreen();
-            } else if (videoPlayer.msRequestFullscreen) {
-                videoPlayer.msRequestFullscreen();
-            }
-
+            videoPlayer.muted = false; /* 开启声音 */
             videoPlayer.play();
+
+            // 显示关闭按钮
+            document.getElementById('closeButton').style.display = 'block';
         });
 
+        // 关闭按钮点击事件
+        document.getElementById('closeButton').addEventListener('click', () => {
+            // 隐藏视频和关闭按钮
+            const videoPlayer = document.getElementById('videoPlayer');
+            videoPlayer.style.display = 'none';
+            videoPlayer.pause();
+            document.getElementById('closeButton').style.display = 'none';
+        });
+
+        // 窗口大小调整
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
