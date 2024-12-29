@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片按钮播放视频</title>
+    <style>
+        /* 设置页面背景 */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #6a11cb, #2575fc);
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        /* 设置图片按钮的样式 */
+        #videoButton {
+            cursor: pointer;
+            border: none;
+            background: none;
+            padding: 0;
+            margin-bottom: 20px;
+        }
+
+        /* 设置视频的样式 */
+        #myVideo {
+            display: none;
+            width: 100%;
+            max-width: 600px;
+            margin-top: 20px;
+        }
+
+        /* 文字渐变色效果 */
+        .theme-text {
+            position: absolute;
+            top: 20px;
+            font-size: 48px;
+            font-weight: bold;
+            background: linear-gradient(90deg, #ff7e5f, #feb47b, #ff7e5f);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradient 3s linear infinite;
+        }
+
+        @keyframes gradient {
+            0% {
+                background-position: 0% 50%;
+            }
+            100% {
+                background-position: 100% 50%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 文字渐变色效果的“主题”文字 -->
+    <div class="theme-text">主题</div>
+
+    <!-- 图片按钮 -->
+    <button id="videoButton">
+        <img src="cutout-image.png" alt="播放视频">
+    </button>
+
+    <!-- 视频元素 -->
+    <video id="myVideo" controls>
+        <source src="video.mp4" type="video/mp4">
+        您的浏览器不支持视频标签。
+    </video>
+
+    <script>
+        // 获取按钮和视频元素
+        const videoButton = document.getElementById('videoButton');
+        const myVideo = document.getElementById('myVideo');
+
+        // 添加点击事件监听器
+        videoButton.addEventListener('click', function() {
+            // 显示视频并播放
+            myVideo.style.display = 'block';
+            myVideo.play();
+        });
+    </script>
+
+</body>
+</html>
