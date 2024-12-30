@@ -26,6 +26,12 @@
             margin-bottom: 20px;
         }
 
+        /* 设置图片的最大宽度 */
+        #videoButton img {
+            max-width: 100%;
+            height: auto;
+        }
+
         /* 设置视频的样式 */
         #myVideo {
             display: none;
@@ -34,11 +40,31 @@
             margin-top: 20px;
         }
 
-        /* 文字渐变色效果 */
-        .theme-text {
+        /* 主题文字容器 */
+        .theme-container {
             position: absolute;
             top: 20px;
-            font-size: 48px;
+            left: 20px;
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1); /* 半透明背景 */
+            border: 1px solid rgba(255, 255, 255, 0.3); /* 边框 */
+            border-radius: 12px; /* 圆角 */
+            padding: 10px 20px;
+            backdrop-filter: blur(10px); /* 背景模糊效果 */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* 阴影 */
+        }
+
+        /* Logo样式 */
+        .theme-container img {
+            width: 40px;
+            height: 40px;
+            margin-right: 15px;
+        }
+
+        /* 文字渐变色效果 */
+        .theme-text {
+            font-size: 24px;
             font-weight: bold;
             background: linear-gradient(90deg, #ff7e5f, #feb47b, #ff7e5f);
             -webkit-background-clip: text;
@@ -58,8 +84,13 @@
 </head>
 <body>
 
-    <!-- 文字渐变色效果的“主题”文字 -->
-    <div class="theme-text">主题</div>
+    <!-- 主题文字容器 -->
+    <div class="theme-container">
+        <!-- Logo -->
+        <img src="logo.png" alt="Logo">
+        <!-- 主题文字 -->
+        <div class="theme-text">主题</div>
+    </div>
 
     <!-- 图片按钮 -->
     <button id="videoButton">
@@ -67,8 +98,8 @@
     </button>
 
     <!-- 视频元素 -->
-    <video id="myVideo" controls>
-        <source src="video.mp4" type="video/mp4">
+    <video id="myVideo" controls autoplay>
+        <source src="vo.mp4" type="video/mp4">
         您的浏览器不支持视频标签。
     </video>
 
@@ -82,6 +113,18 @@
             // 显示视频并播放
             myVideo.style.display = 'block';
             myVideo.play();
+            myVideo.muted = false; // 开启声音
+
+            // 全屏播放
+            if (myVideo.requestFullscreen) {
+                myVideo.requestFullscreen();
+            } else if (myVideo.mozRequestFullScreen) { // Firefox
+                myVideo.mozRequestFullScreen();
+            } else if (myVideo.webkitRequestFullscreen) { // Chrome, Safari and Opera
+                myVideo.webkitRequestFullscreen();
+            } else if (myVideo.msRequestFullscreen) { // IE/Edge
+                myVideo.msRequestFullscreen();
+            }
         });
     </script>
 
