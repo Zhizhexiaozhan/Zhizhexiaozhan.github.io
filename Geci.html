@@ -269,6 +269,7 @@
 
         // 动画循环
         let isLyricActive = false;
+        let currentLyricText = '';
 
         function animate() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -280,21 +281,27 @@
 
             // 获取当前歌词
             const currentLyric = getCurrentLyric();
-            if (currentLyric) {
-                if (!isLyricActive) {
-                    // 如果歌词刚刚出现，生成新的歌词粒子
-                    const lyricParticles = generateLyricParticles(currentLyric);
-                    isLyricActive = true;
+            if (currentLyric && currentLyric !== currentLyricText) {
+                // 如果歌词发生变化，生成新的歌词粒子
+                const lyricParticles = generateLyricParticles(currentLyric);
+                currentLyricText = currentLyric;
 
-                    // 将封面粒子移动到歌词粒子的位置
-                    particles.forEach((particle, index) => {
-                        if (lyricParticles[index]) {
-                            particle.setTarget(lyricParticles[index].x, lyricParticles[index].y);
-                        }
-                    });
+                // 将现有粒子移动到歌词粒子的位置
+                particles.forEach((particle, index) => {
+                    if (lyricParticles[index]) {
+                        particle.setTarget(lyricParticles[index].x, lyricParticles[index].y);
+                    } else {
+                        // 如果新状态的粒子数量少于旧状态，将多余的粒子移动到屏幕外
+                        particle.setTarget(-100, -100);
+                    }
+                });
+
+                // 如果新状态的粒子数量多于旧状态，添加新粒子
+                if (lyricParticles.length > particles.length) {
+                    for (let i = particles.length; i < lyricParticles.length; i++) {
+                        particles.push(lyricParticles[i]);
+                    }
                 }
-            } else {
-                isLyricActive = false;
             }
 
             // 更新并绘制粒子
