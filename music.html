@@ -98,9 +98,11 @@
                 this.y += dy / this.density;
 
                 // 根据音乐频率调整粒子大小
-                const frequencyIndex = Math.floor((this.x / canvas.width) * frequencyData.length);
-                const frequencyValue = frequencyData[frequencyIndex] / 255; // 归一化到 0-1
-                this.size = 2 + frequencyValue * 5; // 粒子大小随频率变化
+                if (frequencyData) {
+                    const frequencyIndex = Math.floor((this.x / canvas.width) * frequencyData.length);
+                    const frequencyValue = frequencyData[frequencyIndex] / 255; // 归一化到 0-1
+                    this.size = 2 + frequencyValue * 5; // 粒子大小随频率变化
+                }
 
                 // 确保粒子不会偏离屏幕
                 if (this.x < 0) this.x = 0;
@@ -260,10 +262,25 @@
         }
 
         // 播放背景音乐并初始化音频分析
-        backgroundMusic.play().catch(error => {
-            console.log('背景音乐播放失败，用户可能未与页面交互。');
-        });
-        initAudioAnalyser();
+        function playBackgroundMusic() {
+            backgroundMusic.play()
+                .then(() => {
+                    console.log('背景音乐开始播放');
+                    initAudioAnalyser();
+                })
+                .catch(error => {
+                    console.log('背景音乐播放失败，用户可能未与页面交互。');
+                    alert('请点击页面以播放背景音乐');
+                });
+        }
+
+        // 监听用户点击事件以播放音乐
+        document.addEventListener('click', () => {
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume(); // 恢复音频上下文
+            }
+            playBackgroundMusic();
+        }, { once: true }); // 只监听一次点击事件
 
         // 动画循环
         function animate() {
