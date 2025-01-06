@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>音乐节奏粒子歌词效果</title>
+    <title>音乐节奏粒子效果</title>
     <style>
         body {
             margin: 0;
@@ -78,9 +78,9 @@
         // 根据设备类型设置文字大小和粒子密度
         const deviceType = getDeviceType();
         const fontSizeMap = {
-            phone: 20, // 手机文字大小
-            tablet: 30, // 平板文字大小
-            desktop: 40 // 电脑文字大小
+            phone: 40, // 手机文字大小
+            tablet: 60, // 平板文字大小
+            desktop: 80 // 电脑文字大小
         };
         const particleDensityMap = {
             phone: 2, // 手机粒子密度
@@ -151,72 +151,68 @@
             }
         }
 
-        // 生成粒子
-        let particles = [];
-        function generateParticlesFromText(text) {
+        // 加载封面图案
+        const coverImage = new Image();
+        coverImage.src = 'anime_girl.png'; // 确保图片路径正确
+        let particles = []; // 存储所有粒子
+
+        // 生成封面图案粒子
+        function generateCoverParticles() {
+            const offCanvas = document.createElement('canvas');
+            const offCtx = offCanvas.getContext('2d');
+            offCanvas.width = canvas.width;
+            offCanvas.height = canvas.height;
+
+            // 绘制封面图案到离屏Canvas
+            offCtx.drawImage(coverImage, 0, 0, canvas.width, canvas.height);
+
+            // 获取像素数据
+            const imageData = offCtx.getImageData(0, 0, canvas.width, canvas.height).data;
+
+            // 生成粒子
+            const newParticles = [];
+            for (let y = 0; y < canvas.height; y += particleDensity) {
+                for (let x = 0; x < canvas.width; x += particleDensity) {
+                    const pixelIndex = (y * canvas.width + x) * 4;
+                    if (imageData[pixelIndex] > 128) { // 如果像素是白色
+                        newParticles.push(new Particle(x, y));
+                    }
+                }
+            }
+
+            return newParticles;
+        }
+
+        // 生成歌词粒子
+        function generateLyricParticles(text) {
             const fontFamily = 'Arial';
             ctx.font = `${fontSize}px ${fontFamily}`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
 
-            // 将歌词分成左右两部分
-            const words = text.split(' ');
-            const line1 = words.slice(0, Math.ceil(words.length / 2)).join(' ');
-            const line2 = words.slice(Math.ceil(words.length / 2)).join(' ');
-
-            // 计算左右两行文字的起始位置
-            const textX1 = canvas.width / 4; // 左半部分
-            const textX2 = (canvas.width * 3) / 4; // 右半部分
-            const textY = canvas.height / 2 - (line1.length * fontSize) / 2;
-
             // 创建离屏Canvas
             const offCanvas = document.createElement('canvas');
             const offCtx = offCanvas.getContext('2d');
-            offCanvas.width = fontSize;
-            offCanvas.height = fontSize * line1.length;
+            offCanvas.width = canvas.width;
+            offCanvas.height = canvas.height;
             offCtx.font = `${fontSize}px ${fontFamily}`;
             offCtx.textAlign = 'center';
             offCtx.textBaseline = 'middle';
             offCtx.fillStyle = '#fff';
 
-            // 绘制左半部分竖排文字
-            for (let i = 0; i < line1.length; i++) {
-                offCtx.fillText(line1[i], fontSize / 2, fontSize / 2 + i * fontSize);
-            }
+            // 绘制文字到离屏Canvas
+            offCtx.fillText(text, canvas.width / 2, canvas.height / 2);
 
-            // 获取左半部分像素数据
-            const imageData1 = offCtx.getImageData(0, 0, fontSize, fontSize * line1.length).data;
+            // 获取像素数据
+            const imageData = offCtx.getImageData(0, 0, canvas.width, canvas.height).data;
 
-            // 生成左半部分粒子
+            // 生成粒子
             const newParticles = [];
-            for (let y = 0; y < fontSize * line1.length; y += particleDensity) {
-                for (let x = 0; x < fontSize; x += particleDensity) {
-                    const pixelIndex = (y * fontSize + x) * 4;
-                    if (imageData1[pixelIndex] > 128) { // 如果像素是白色
-                        const posX = x + textX1 - fontSize / 2;
-                        const posY = y + textY;
-                        newParticles.push(new Particle(posX, posY));
-                    }
-                }
-            }
-
-            // 绘制右半部分竖排文字
-            offCtx.clearRect(0, 0, offCanvas.width, offCanvas.height);
-            for (let i = 0; i < line2.length; i++) {
-                offCtx.fillText(line2[i], fontSize / 2, fontSize / 2 + i * fontSize);
-            }
-
-            // 获取右半部分像素数据
-            const imageData2 = offCtx.getImageData(0, 0, fontSize, fontSize * line2.length).data;
-
-            // 生成右半部分粒子
-            for (let y = 0; y < fontSize * line2.length; y += particleDensity) {
-                for (let x = 0; x < fontSize; x += particleDensity) {
-                    const pixelIndex = (y * fontSize + x) * 4;
-                    if (imageData2[pixelIndex] > 128) { // 如果像素是白色
-                        const posX = x + textX2 - fontSize / 2;
-                        const posY = y + textY;
-                        newParticles.push(new Particle(posX, posY));
+            for (let y = 0; y < canvas.height; y += particleDensity) {
+                for (let x = 0; x < canvas.width; x += particleDensity) {
+                    const pixelIndex = (y * canvas.width + x) * 4;
+                    if (imageData[pixelIndex] > 128) { // 如果像素是白色
+                        newParticles.push(new Particle(x, y));
                     }
                 }
             }
@@ -272,6 +268,8 @@
         }, { once: true }); // 只监听一次点击事件
 
         // 动画循环
+        let isLyricActive = false;
+
         function animate() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -283,10 +281,20 @@
             // 获取当前歌词
             const currentLyric = getCurrentLyric();
             if (currentLyric) {
-                // 如果歌词发生变化，生成新的粒子
-                if (!particles.length || particles[0].text !== currentLyric) {
-                    particles = generateParticlesFromText(currentLyric);
+                if (!isLyricActive) {
+                    // 如果歌词刚刚出现，生成新的歌词粒子
+                    const lyricParticles = generateLyricParticles(currentLyric);
+                    isLyricActive = true;
+
+                    // 将封面粒子移动到歌词粒子的位置
+                    particles.forEach((particle, index) => {
+                        if (lyricParticles[index]) {
+                            particle.setTarget(lyricParticles[index].x, lyricParticles[index].y);
+                        }
+                    });
                 }
+            } else {
+                isLyricActive = false;
             }
 
             // 更新并绘制粒子
@@ -298,7 +306,11 @@
             requestAnimationFrame(animate);
         }
 
-        animate();
+        // 加载封面图案并生成粒子
+        coverImage.onload = () => {
+            particles = generateCoverParticles();
+            animate();
+        };
     </script>
 </body>
 </html>
