@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音乐节奏粒子效果</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- 画布用于显示粒子效果 -->
+    <canvas id="particleCanvas"></canvas>
+
+    <!-- 背景音乐 -->
+    <audio id="backgroundMusic" loop>
+        <source src="background_music.mp3" type="audio/mpeg">
+        您的浏览器不支持音频播放。
+    </audio>
+
+    <script>
+        // 获取画布和上下文
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // 定义文字内容
+        const textGroups = [
+            '天津越驰合纵', // 第一组文字
+            '志在必行'      // 第二组文字
+        ];
+        let currentGroupIndex = 0; // 当前文字组的索引
+
+        // 设备类型检测
+        const getDeviceType = () => {
+            const width = window.innerWidth;
+            if (width < 600) return 'phone'; // 手机
+            if (width < 1024) return 'tablet'; // 平板
+            return 'desktop'; // 电脑
+        };
+
+        // 根据设备类型设置文字大小和粒子密度
+        const deviceType = getDeviceType();
+        const fontSizeMap = {
+            phone: 60, // 手机文字大小
+            tablet: 80, // 平板文字大小
+            desktop: 100 // 电脑文字大小
+        };
+        const particleDensityMap = {
+            phone: 2, // 手机粒子密度
+            tablet: 3, // 平板粒子密度
+            desktop: 5 // 电脑粒子密度
+        };
+
+        const fontSize = fontSizeMap[deviceType];
+        const particleDensity = particleDensityMap[deviceType];
+
+        // 粒子类
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 2 + 1;
+                this.baseX = x; // 初始位置
+                this.baseY = y;
+                this.targetX = x; // 目标位置
+                this.targetY = y;
+                this.density = Math.random() * 10 + 5;
+                this.color = `hsl(${Math.random() * 360}, 50%, 50%)`;
+                this.angle = Math.random() * Math.PI * 2; // 用于漩涡效果
+                this.radius = Math.random() * 100 + 50; // 漩涡半径
+                this.speed = Math.random() * 0.02 + 0.01; // 漩涡速度
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            update(frequencyData) {
+                // 计算目标位置和当前位置的差值
+                const dx = this.targetX - this.x;
+                const dy = this.targetY - this.y;
+
+                // 逐渐向目标位置移动
+                this.x += dx / this.density;
+                this.y += dy / this.density;
+
+                // 根据音乐频率调整粒子大小
+                const frequencyIndex = Math.floor((this.x / canvas.width) * frequencyData.length);
+                const frequencyValue = frequencyData[frequencyIndex] / 255; // 归一化到 0-1
+                this.size = 2 + frequencyValue * 5; // 粒子大小随频率变化
+
+                // 确保粒子不会偏离屏幕
+                if (this.x < 0) this.x = 0;
+                if (this.x > canvas.width) this.x = canvas.width;
+                if (this.y < 0) this.y = 0;
+                if (this.y > canvas.height) this.y = canvas.height;
+            }
+
+            setTarget(x, y) {
+                this.targetX = x;
+                this.targetY = y;
+            }
+
+            // 漩涡效果
+            swirl() {
+                this.angle += this.speed;
+                this.x = canvas.width / 2 + Math.cos(this.angle) * this.radius;
+                this.y = canvas.height / 2 + Math.sin(this.angle) * (this.radius / 2);
+                this.radius *= 0.99; // 逐渐缩小半径
+            }
+        }
+
+        // 生成粒子
+        let particles = [];
+        function generateParticlesFromText(text, callback) {
+            const fontFamily = 'Arial';
+
+            ctx.font = `${fontSize}px ${fontFamily}`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // 计算竖排文字的起始位置
+            const textX = canvas.width / 2;
+            const textY = canvas.height / 2 - (text.length * fontSize) / 2;
+
+            // 创建离屏Canvas
+            const offCanvas = document.createElement('canvas');
+            const offCtx = offCanvas.getContext('2d');
+            offCanvas.width = fontSize; // 宽度为单个字符的宽度
+            offCanvas.height = fontSize * text.length; // 高度为所有字符的总高度
+            offCtx.font = `${fontSize}px ${fontFamily}`;
+            offCtx.textAlign = 'center';
+            offCtx.textBaseline = 'middle';
+            offCtx.fillStyle = '#fff';
+
+            // 绘制竖排文字
+            for (let i = 0; i < text.length; i++) {
+                offCtx.fillText(text[i], fontSize / 2, fontSize / 2 + i * fontSize);
+            }
+
+            // 获取像素数据
+            const imageData = offCtx.getImageData(0, 0, fontSize, fontSize * text.length).data;
+
+            // 生成新粒子
+            const newParticles = [];
+            for (let y = 0; y < fontSize * text.length; y += particleDensity) {
+                for (let x = 0; x < fontSize; x += particleDensity) {
+                    const pixelIndex = (y * fontSize + x) * 4;
+                    if (imageData[pixelIndex] > 128) { // 如果像素是白色
+                        const posX = x + textX - fontSize / 2;
+                        const posY = y + textY;
+                        newParticles.push(new Particle(posX, posY));
+                    }
+                }
+            }
+
+            if (callback) callback(newParticles);
+            return newParticles;
+        }
+
+        // 生成粒子从图片
+        function generateParticlesFromImage(imageUrl, callback) {
+            const img = new Image();
+            img.src = imageUrl;
+            img.onload = () => {
+                const offCanvas = document.createElement('canvas');
+                const offCtx = offCanvas.getContext('2d');
+                offCanvas.width = img.width;
+                offCanvas.height = img.height;
+                offCtx.drawImage(img, 0, 0, img.width, img.height);
+
+                // 获取像素数据
+                const imageData = offCtx.getImageData(0, 0, img.width, img.height).data;
+
+                // 生成新粒子
+                const newParticles = [];
+                for (let y = 0; y < img.height; y += 5) {
+                    for (let x = 0; x < img.width; x += 5) {
+                        const pixelIndex = (y * img.width + x) * 4;
+                        if (imageData[pixelIndex] > 128) { // 如果像素是白色
+                            const posX = (x / img.width) * canvas.width;
+                            const posY = (y / img.height) * canvas.height;
+                            newParticles.push(new Particle(posX, posY));
+                        }
+                    }
+                }
+
+                if (callback) callback(newParticles);
+            };
+        }
+
+        // 将粒子从当前状态转换到目标状态
+        function transitionToTarget(newParticles) {
+            particles.forEach((particle, index) => {
+                if (newParticles[index]) {
+                    particle.setTarget(newParticles[index].x, newParticles[index].y);
+                } else {
+                    // 如果新状态的粒子数量少于旧状态，将多余的粒子移动到随机位置
+                    particle.setTarget(
+                        Math.random() * canvas.width,
+                        Math.random() * canvas.height
+                    );
+                }
+            });
+
+            // 如果新状态的粒子数量多于旧状态，添加新粒子
+            if (newParticles.length > particles.length) {
+                for (let i = particles.length; i < newParticles.length; i++) {
+                    particles.push(newParticles[i]);
+                }
+            }
+        }
+
+        // 初始化
+        particles = generateParticlesFromText(textGroups[currentGroupIndex]);
+
+        // 点击事件
+        let clickCount = 0;
+        canvas.addEventListener('click', () => {
+            clickCount++;
+            if (clickCount === 1) {
+                // 第一次点击：切换到“志在必行”
+                currentGroupIndex = 1;
+                const newParticles = generateParticlesFromText(textGroups[currentGroupIndex]);
+                transitionToTarget(newParticles);
+            } else if (clickCount === 2) {
+                // 第二次点击：切换到动漫女性图案
+                generateParticlesFromImage('anime_girl.png', (newParticles) => {
+                    transitionToTarget(newParticles);
+                });
+            }
+        });
+
+        // 音频分析
+        let audioContext, analyser, frequencyData;
+        const backgroundMusic = document.getElementById('backgroundMusic');
+
+        // 初始化音频分析
+        function initAudioAnalyser() {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioContext.createAnalyser();
+            analyser.fftSize = 256; // 设置 FFT 大小
+            const source = audioContext.createMediaElementSource(backgroundMusic);
+            source.connect(analyser);
+            analyser.connect(audioContext.destination);
+            frequencyData = new Uint8Array(analyser.frequencyBinCount);
+        }
+
+        // 播放背景音乐并初始化音频分析
+        backgroundMusic.play().catch(error => {
+            console.log('背景音乐播放失败，用户可能未与页面交互。');
+        });
+        initAudioAnalyser();
+
+        // 动画循环
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 获取音频频率数据
+            if (analyser) {
+                analyser.getByteFrequencyData(frequencyData);
+            }
+
+            // 更新并绘制粒子
+            particles.forEach(particle => {
+                particle.draw();
+                particle.update(frequencyData);
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
