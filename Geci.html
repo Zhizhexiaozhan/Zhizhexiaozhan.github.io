@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音乐节奏粒子歌词效果</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- 画布用于显示粒子效果 -->
+    <canvas id="particleCanvas"></canvas>
+
+    <!-- 背景音乐 -->
+    <audio id="backgroundMusic" loop>
+        <source src="background_music.mp3" type="audio/mpeg">
+        您的浏览器不支持音频播放。
+    </audio>
+
+    <script>
+        // 获取画布和上下文
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // 歌词数据（每6秒一段）
+        const lyrics = [
+            { text: "红黄绿转又转 聚了又散 剧院外面", time: 0 },
+            { text: "怀疑就快落雪 就快换季 换走落叶", time: 6 },
+            { text: "于中央公园坐坐 都市渐变黑白", time: 12 },
+            { text: "仿佛看见你 依稀对望", time: 18 },
+            { text: "回忆的半分钟 那个冬天", time: 24 },
+            { text: "静静的相拥 冰封半分钟", time: 30 },
+            { text: "有你的青涩 使我面红", time: 36 },
+            { text: "企鹅幻想有天去北极", time: 42 },
+            { text: "游着 行着 却不记得负隅顽抗 顽抗", time: 48 },
+            { text: "如何顽抗 地铁 几百万人", time: 54 },
+            { text: "烦恼着公事", time: 60 },
+            { text: "然后遗弃内心所有热情 有一次", time: 66 },
+            { text: "差不多亲暱那刻才哭泣", time: 72 },
+            { text: "差不多等到曙光才消失", time: 78 },
+            { text: "生活 很压逼是吗 压到爱受了委屈", time: 84 },
+            { text: "回忆的半分钟", time: 90 },
+            { text: "那个冬天静静的相拥", time: 96 },
+            { text: "冰封半分钟", time: 102 },
+            { text: "有你的青涩 使我面红", time: 108 },
+            { text: "企鹅幻想有天嫁北极熊", time: 114 },
+            { text: "而明明无能力横越赤道", time: 120 },
+            { text: "该怎么迈进 能怎么迈进", time: 126 },
+            { text: "直到不如分开 越过汪洋深海", time: 132 },
+            { text: "亏欠一个深爱的 也摆脱生我的城市", time: 138 },
+            { text: "我发现宇宙更大更广阔", time: 144 },
+            { text: "能顺其自然地过活", time: 150 },
+            { text: "偏偏你再度走进我眼中", time: 156 },
+            { text: "半分钟 若静静的相拥", time: 162 },
+            { text: "差点看不懂 第五街飘雪 一片白蒙", time: 168 },
+            { text: "你手上的戒指半掩着", time: 174 },
+            { text: "凝望你咖啡杯亲切的名 记忆有风", time: 180 }
+        ];
+
+        // 设备类型检测
+        const getDeviceType = () => {
+            const width = window.innerWidth;
+            if (width < 600) return 'phone'; // 手机
+            if (width < 1024) return 'tablet'; // 平板
+            return 'desktop'; // 电脑
+        };
+
+        // 根据设备类型设置文字大小和粒子密度
+        const deviceType = getDeviceType();
+        const fontSizeMap = {
+            phone: 40, // 手机文字大小
+            tablet: 60, // 平板文字大小
+            desktop: 80 // 电脑文字大小
+        };
+        const particleDensityMap = {
+            phone: 2, // 手机粒子密度
+            tablet: 3, // 平板粒子密度
+            desktop: 5 // 电脑粒子密度
+        };
+
+        const fontSize = fontSizeMap[deviceType];
+        const particleDensity = particleDensityMap[deviceType];
+
+        // 粒子类
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 2 + 1;
+                this.baseX = x; // 初始位置
+                this.baseY = y;
+                this.targetX = x; // 目标位置
+                this.targetY = y;
+                this.density = Math.random() * 10 + 5;
+                this.color = `hsl(${Math.random() * 360}, 50%, 50%)`;
+                this.angle = Math.random() * Math.PI * 2; // 用于漩涡效果
+                this.radius = Math.random() * 100 + 50; // 漩涡半径
+                this.speed = Math.random() * 0.02 + 0.01; // 漩涡速度
+                this.rotation = 0; // 旋转角度
+            }
+
+            draw() {
+                ctx.save(); // 保存画布状态
+                ctx.translate(this.x, this.y); // 将原点移动到粒子中心
+                ctx.rotate(this.rotation); // 旋转粒子
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(0, 0, this.size, 0, Math.PI * 2); // 以新原点为中心绘制粒子
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore(); // 恢复画布状态
+            }
+
+            update(frequencyData) {
+                // 计算目标位置和当前位置的差值
+                const dx = this.targetX - this.x;
+                const dy = this.targetY - this.y;
+
+                // 逐渐向目标位置移动
+                this.x += dx / this.density;
+                this.y += dy / this.density;
+
+                // 根据音乐频率调整粒子大小和旋转角度
+                if (frequencyData) {
+                    const frequencyIndex = Math.floor((this.x / canvas.width) * frequencyData.length);
+                    const frequencyValue = frequencyData[frequencyIndex] / 255; // 归一化到 0-1
+                    this.size = 2 + frequencyValue * 5; // 粒子大小随频率变化
+                    this.rotation += frequencyValue * 0.2; // 增强旋转速度
+                }
+
+                // 确保粒子不会偏离屏幕
+                if (this.x < 0) this.x = 0;
+                if (this.x > canvas.width) this.x = canvas.width;
+                if (this.y < 0) this.y = 0;
+                if (this.y > canvas.height) this.y = canvas.height;
+            }
+
+            setTarget(x, y) {
+                this.targetX = x;
+                this.targetY = y;
+            }
+        }
+
+        // 生成粒子
+        let particles = [];
+        function generateParticlesFromText(text) {
+            const fontFamily = 'Arial';
+            ctx.font = `${fontSize}px ${fontFamily}`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // 计算竖排文字的起始位置
+            const textX = canvas.width / 2;
+            const textY = canvas.height / 2 - (text.length * fontSize) / 2;
+
+            // 创建离屏Canvas
+            const offCanvas = document.createElement('canvas');
+            const offCtx = offCanvas.getContext('2d');
+            offCanvas.width = fontSize;
+            offCanvas.height = fontSize * text.length;
+            offCtx.font = `${fontSize}px ${fontFamily}`;
+            offCtx.textAlign = 'center';
+            offCtx.textBaseline = 'middle';
+            offCtx.fillStyle = '#fff';
+
+            // 绘制竖排文字
+            for (let i = 0; i < text.length; i++) {
+                offCtx.fillText(text[i], fontSize / 2, fontSize / 2 + i * fontSize);
+            }
+
+            // 获取像素数据
+            const imageData = offCtx.getImageData(0, 0, fontSize, fontSize * text.length).data;
+
+            // 生成新粒子
+            const newParticles = [];
+            for (let y = 0; y < fontSize * text.length; y += particleDensity) {
+                for (let x = 0; x < fontSize; x += particleDensity) {
+                    const pixelIndex = (y * fontSize + x) * 4;
+                    if (imageData[pixelIndex] > 128) { // 如果像素是白色
+                        const posX = x + textX - fontSize / 2;
+                        const posY = y + textY;
+                        newParticles.push(new Particle(posX, posY));
+                    }
+                }
+            }
+
+            return newParticles;
+        }
+
+        // 获取当前歌词
+        function getCurrentLyric() {
+            const currentTime = backgroundMusic.currentTime; // 获取当前播放时间
+            for (let i = lyrics.length - 1; i >= 0; i--) {
+                if (currentTime >= lyrics[i].time) {
+                    return lyrics[i].text; // 返回当前歌词
+                }
+            }
+            return null; // 如果没有歌词，返回 null
+        }
+
+        // 音频分析
+        let audioContext, analyser, frequencyData;
+        const backgroundMusic = document.getElementById('backgroundMusic');
+
+        // 初始化音频分析
+        function initAudioAnalyser() {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioContext.createAnalyser();
+            analyser.fftSize = 256; // 设置 FFT 大小
+            const source = audioContext.createMediaElementSource(backgroundMusic);
+            source.connect(analyser);
+            analyser.connect(audioContext.destination);
+            frequencyData = new Uint8Array(analyser.frequencyBinCount);
+        }
+
+        // 播放背景音乐并初始化音频分析
+        function playBackgroundMusic() {
+            backgroundMusic.play()
+                .then(() => {
+                    console.log('背景音乐开始播放');
+                    initAudioAnalyser();
+                })
+                .catch(error => {
+                    console.log('背景音乐播放失败，用户可能未与页面交互。');
+                    alert('请点击页面以播放背景音乐');
+                });
+        }
+
+        // 监听用户点击事件以播放音乐
+        document.addEventListener('click', () => {
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume(); // 恢复音频上下文
+            }
+            playBackgroundMusic();
+        }, { once: true }); // 只监听一次点击事件
+
+        // 动画循环
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 获取音频频率数据
+            if (analyser) {
+                analyser.getByteFrequencyData(frequencyData);
+            }
+
+            // 获取当前歌词
+            const currentLyric = getCurrentLyric();
+            if (currentLyric) {
+                // 如果歌词发生变化，生成新的粒子
+                if (!particles.length || particles[0].text !== currentLyric) {
+                    particles = generateParticlesFromText(currentLyric);
+                }
+            }
+
+            // 更新并绘制粒子
+            particles.forEach(particle => {
+                particle.draw();
+                particle.update(frequencyData);
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
