@@ -153,10 +153,6 @@
 
         // 生成粒子
         let particles = [];
-        let targetParticles = []; // 目标粒子状态
-        let isTransitioning = false; // 是否正在切换
-        let transitionProgress = 0; // 切换进度
-
         function generateParticlesFromText(text) {
             const fontFamily = 'Arial';
             ctx.font = `${fontSize}px ${fontFamily}`;
@@ -288,32 +284,12 @@
             const currentLyric = getCurrentLyric();
             if (currentLyric) {
                 // 如果歌词发生变化，生成新的粒子
-                if (!particles.length || currentLyric !== particles[0].text) {
-                    targetParticles = generateParticlesFromText(currentLyric);
-                    isTransitioning = true;
-                    transitionProgress = 0;
+                if (!particles.length || particles[0].text !== currentLyric) {
+                    particles = generateParticlesFromText(currentLyric);
                 }
             }
 
             // 更新并绘制粒子
-            if (isTransitioning) {
-                transitionProgress += 0.02; // 控制切换速度
-                if (transitionProgress >= 1) {
-                    isTransitioning = false;
-                    particles = targetParticles;
-                } else {
-                    // 平滑过渡
-                    particles.forEach((particle, index) => {
-                        if (targetParticles[index]) {
-                            particle.setTarget(
-                                particle.x + (targetParticles[index].x - particle.x) * transitionProgress,
-                                particle.y + (targetParticles[index].y - particle.y) * transitionProgress
-                            );
-                        }
-                    });
-                }
-            }
-
             particles.forEach(particle => {
                 particle.draw();
                 particle.update(frequencyData);
