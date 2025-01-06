@@ -34,37 +34,37 @@
 
         // 歌词数据（每6秒一段）
         const lyrics = [
-            { text: "红黄绿转又转 聚了又散 剧院外面", time: 0 },
-            { text: "怀疑就快落雪 就快换季 换走落叶", time: 6 },
-            { text: "于中央公园坐坐 都市渐变黑白", time: 12 },
-            { text: "仿佛看见你 依稀对望", time: 18 },
-            { text: "回忆的半分钟 那个冬天", time: 24 },
-            { text: "静静的相拥 冰封半分钟", time: 30 },
-            { text: "有你的青涩 使我面红", time: 36 },
-            { text: "企鹅幻想有天去北极", time: 42 },
-            { text: "游着 行着 却不记得负隅顽抗 顽抗", time: 48 },
-            { text: "如何顽抗 地铁 几百万人", time: 54 },
-            { text: "烦恼着公事", time: 60 },
-            { text: "然后遗弃内心所有热情 有一次", time: 66 },
-            { text: "差不多亲暱那刻才哭泣", time: 72 },
-            { text: "差不多等到曙光才消失", time: 78 },
-            { text: "生活 很压逼是吗 压到爱受了委屈", time: 84 },
-            { text: "回忆的半分钟", time: 90 },
-            { text: "那个冬天静静的相拥", time: 96 },
-            { text: "冰封半分钟", time: 102 },
-            { text: "有你的青涩 使我面红", time: 108 },
-            { text: "企鹅幻想有天嫁北极熊", time: 114 },
-            { text: "而明明无能力横越赤道", time: 120 },
-            { text: "该怎么迈进 能怎么迈进", time: 126 },
-            { text: "直到不如分开 越过汪洋深海", time: 132 },
-            { text: "亏欠一个深爱的 也摆脱生我的城市", time: 138 },
-            { text: "我发现宇宙更大更广阔", time: 144 },
-            { text: "能顺其自然地过活", time: 150 },
-            { text: "偏偏你再度走进我眼中", time: 156 },
-            { text: "半分钟 若静静的相拥", time: 162 },
-            { text: "差点看不懂 第五街飘雪 一片白蒙", time: 168 },
-            { text: "你手上的戒指半掩着", time: 174 },
-            { text: "凝望你咖啡杯亲切的名 记忆有风", time: 180 }
+            { text: "红黄绿转又转 聚了又散 剧院外面", time: 21 },
+            { text: "怀疑就快落雪 就快换季 换走落叶", time: 29 },
+            { text: "于中央公园坐坐 都市渐变黑白", time: 37 },
+            { text: "仿佛看见你 依稀对望", time: 45 },
+            { text: "回忆的半分钟 那个冬天", time: 52 },
+            { text: "静静的相拥 冰封半分钟", time: 59 },
+            { text: "有你的青涩 使我面红", time: 64 },
+            { text: "企鹅幻想有天去北极", time: 69 },
+            { text: "游着 行着 却不记得负隅顽抗 顽抗", time: 73 },
+            { text: "如何顽抗 地铁 几百万人", time: 84 },
+            { text: "烦恼着公事", time: 88 },
+            { text: "然后遗弃内心所有热情 有一次", time: 91 },
+            { text: "差不多亲暱那刻才哭泣", time: 98 },
+            { text: "差不多等到曙光才消失", time: 101 },
+            { text: "生活 很压逼是吗 压到爱受了委屈", time: 105 },
+            { text: "回忆的半分钟", time: 115 },
+            { text: "那个冬天静静的相拥", time: 120 },
+            { text: "冰封半分钟", time: 124 },
+            { text: "有你的青涩 使我面红", time: 127 },
+            { text: "企鹅幻想有天嫁北极熊", time: 132 },
+            { text: "而明明无能力横越赤道", time: 137 },
+            { text: "该怎么迈进 能怎么迈进", time: 139 },
+            { text: "直到不如分开 越过汪洋深海", time: 146 },
+            { text: "亏欠一个深爱的 也摆脱生我的城市", time: 155 },
+            { text: "我发现宇宙更大更广阔", time: 162 },
+            { text: "能顺其自然地过活", time: 166 },
+            { text: "偏偏你再度走进我眼中", time: 170 },
+            { text: "半分钟 若静静的相拥", time: 178 },
+            { text: "差点看不懂 第五街飘雪 一片白蒙", time: 185 },
+            { text: "你手上的戒指半掩着", time: 194 },
+            { text: "凝望你咖啡杯亲切的名 记忆有风", time: 198 }
         ];
 
         // 设备类型检测
@@ -78,9 +78,9 @@
         // 根据设备类型设置文字大小和粒子密度
         const deviceType = getDeviceType();
         const fontSizeMap = {
-            phone: 40, // 手机文字大小
-            tablet: 60, // 平板文字大小
-            desktop: 80 // 电脑文字大小
+            phone: 20, // 手机文字大小
+            tablet: 30, // 平板文字大小
+            desktop: 40 // 电脑文字大小
         };
         const particleDensityMap = {
             phone: 2, // 手机粒子密度
@@ -153,41 +153,72 @@
 
         // 生成粒子
         let particles = [];
+        let targetParticles = []; // 目标粒子状态
+        let isTransitioning = false; // 是否正在切换
+        let transitionProgress = 0; // 切换进度
+
         function generateParticlesFromText(text) {
             const fontFamily = 'Arial';
             ctx.font = `${fontSize}px ${fontFamily}`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
 
-            // 计算竖排文字的起始位置
-            const textX = canvas.width / 2;
-            const textY = canvas.height / 2 - (text.length * fontSize) / 2;
+            // 将歌词分成左右两部分
+            const words = text.split(' ');
+            const line1 = words.slice(0, Math.ceil(words.length / 2)).join(' ');
+            const line2 = words.slice(Math.ceil(words.length / 2)).join(' ');
+
+            // 计算左右两行文字的起始位置
+            const textX1 = canvas.width / 4; // 左半部分
+            const textX2 = (canvas.width * 3) / 4; // 右半部分
+            const textY = canvas.height / 2 - (line1.length * fontSize) / 2;
 
             // 创建离屏Canvas
             const offCanvas = document.createElement('canvas');
             const offCtx = offCanvas.getContext('2d');
             offCanvas.width = fontSize;
-            offCanvas.height = fontSize * text.length;
+            offCanvas.height = fontSize * line1.length;
             offCtx.font = `${fontSize}px ${fontFamily}`;
             offCtx.textAlign = 'center';
             offCtx.textBaseline = 'middle';
             offCtx.fillStyle = '#fff';
 
-            // 绘制竖排文字
-            for (let i = 0; i < text.length; i++) {
-                offCtx.fillText(text[i], fontSize / 2, fontSize / 2 + i * fontSize);
+            // 绘制左半部分竖排文字
+            for (let i = 0; i < line1.length; i++) {
+                offCtx.fillText(line1[i], fontSize / 2, fontSize / 2 + i * fontSize);
             }
 
-            // 获取像素数据
-            const imageData = offCtx.getImageData(0, 0, fontSize, fontSize * text.length).data;
+            // 获取左半部分像素数据
+            const imageData1 = offCtx.getImageData(0, 0, fontSize, fontSize * line1.length).data;
 
-            // 生成新粒子
+            // 生成左半部分粒子
             const newParticles = [];
-            for (let y = 0; y < fontSize * text.length; y += particleDensity) {
+            for (let y = 0; y < fontSize * line1.length; y += particleDensity) {
                 for (let x = 0; x < fontSize; x += particleDensity) {
                     const pixelIndex = (y * fontSize + x) * 4;
-                    if (imageData[pixelIndex] > 128) { // 如果像素是白色
-                        const posX = x + textX - fontSize / 2;
+                    if (imageData1[pixelIndex] > 128) { // 如果像素是白色
+                        const posX = x + textX1 - fontSize / 2;
+                        const posY = y + textY;
+                        newParticles.push(new Particle(posX, posY));
+                    }
+                }
+            }
+
+            // 绘制右半部分竖排文字
+            offCtx.clearRect(0, 0, offCanvas.width, offCanvas.height);
+            for (let i = 0; i < line2.length; i++) {
+                offCtx.fillText(line2[i], fontSize / 2, fontSize / 2 + i * fontSize);
+            }
+
+            // 获取右半部分像素数据
+            const imageData2 = offCtx.getImageData(0, 0, fontSize, fontSize * line2.length).data;
+
+            // 生成右半部分粒子
+            for (let y = 0; y < fontSize * line2.length; y += particleDensity) {
+                for (let x = 0; x < fontSize; x += particleDensity) {
+                    const pixelIndex = (y * fontSize + x) * 4;
+                    if (imageData2[pixelIndex] > 128) { // 如果像素是白色
+                        const posX = x + textX2 - fontSize / 2;
                         const posY = y + textY;
                         newParticles.push(new Particle(posX, posY));
                     }
@@ -257,12 +288,32 @@
             const currentLyric = getCurrentLyric();
             if (currentLyric) {
                 // 如果歌词发生变化，生成新的粒子
-                if (!particles.length || particles[0].text !== currentLyric) {
-                    particles = generateParticlesFromText(currentLyric);
+                if (!particles.length || currentLyric !== particles[0].text) {
+                    targetParticles = generateParticlesFromText(currentLyric);
+                    isTransitioning = true;
+                    transitionProgress = 0;
                 }
             }
 
             // 更新并绘制粒子
+            if (isTransitioning) {
+                transitionProgress += 0.02; // 控制切换速度
+                if (transitionProgress >= 1) {
+                    isTransitioning = false;
+                    particles = targetParticles;
+                } else {
+                    // 平滑过渡
+                    particles.forEach((particle, index) => {
+                        if (targetParticles[index]) {
+                            particle.setTarget(
+                                particle.x + (targetParticles[index].x - particle.x) * transitionProgress,
+                                particle.y + (targetParticles[index].y - particle.y) * transitionProgress
+                            );
+                        }
+                    });
+                }
+            }
+
             particles.forEach(particle => {
                 particle.draw();
                 particle.update(frequencyData);
