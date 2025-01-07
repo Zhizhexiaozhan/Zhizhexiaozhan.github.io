@@ -32,11 +32,9 @@
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
-        // 歌词数据（按人声分段）
+        // 歌词数据（每6秒一段）
         const lyrics = [
-            { text: "红黄绿转又转 
-                聚了又散 
-            剧院外面", time: 21 },
+            { text: "红黄绿转又转 聚了又散 剧院外面", time: 21 },
             { text: "怀疑就快落雪 就快换季 换走落叶", time: 29 },
             { text: "于中央公园坐坐 都市渐变黑白", time: 37 },
             { text: "仿佛看见你 依稀对望", time: 45 },
@@ -188,6 +186,9 @@
 
         // 生成歌词粒子
         function generateLyricParticles(text) {
+            // 将空格替换为换行符
+            const formattedText = text.replace(/ /g, '\n');
+
             const fontFamily = 'Arial';
             ctx.font = `${fontSize}px ${fontFamily}`;
             ctx.textAlign = 'center';
@@ -204,7 +205,14 @@
             offCtx.fillStyle = '#fff';
 
             // 绘制文字到离屏Canvas
-            offCtx.fillText(text, canvas.width / 2, canvas.height / 2);
+            const lines = formattedText.split('\n'); // 按换行符分割文本
+            const lineHeight = fontSize * 1.2; // 行高
+            const totalHeight = lines.length * lineHeight; // 总高度
+            let yOffset = (canvas.height - totalHeight) / 2; // 垂直居中
+
+            lines.forEach((line, index) => {
+                offCtx.fillText(line, canvas.width / 2, yOffset + index * lineHeight);
+            });
 
             // 获取像素数据
             const imageData = offCtx.getImageData(0, 0, canvas.width, canvas.height).data;
