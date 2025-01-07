@@ -132,7 +132,8 @@
 
                 // 根据音乐频率调整粒子大小和旋转角度
                 if (frequencyData) {
-                    const frequencyIndex = Math.floor((this.x / canvas.width) * frequencyData.length);
+                    // 修改频率索引计算方式：基于 y 坐标
+                    const frequencyIndex = Math.floor((this.y / canvas.height) * frequencyData.length);
                     const frequencyValue = frequencyData[frequencyIndex] / 255; // 归一化到 0-1
                     this.size = 2 + frequencyValue * 5; // 粒子大小随频率变化
                     this.rotation += frequencyValue * 0.2; // 增强旋转速度
