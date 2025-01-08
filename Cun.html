@@ -132,7 +132,7 @@
         <!-- 视频容器 -->
         <div id="video-container">
             <video id="bg-video" autoplay muted loop>
-                <source src="your-video-file.mp4" type="video/mp4">
+                <source src="video1.mp4" type="video/mp4">
                 您的浏览器不支持HTML5视频。
             </video>
         </div>
@@ -281,8 +281,30 @@
             fileBox.classList.toggle('collapsed');
         }
 
+        // 打开文件功能
         function openFile(filename) {
-            alert(`打开文件: ${filename}`);
+            const filePath = `/${filename}`; // 根目录下的文件路径
+            if (filename.endsWith('.mp4')) {
+                // 如果是视频文件，设置为背景视频
+                const video = document.getElementById('bg-video');
+                video.src = filePath;
+                video.play();
+            } else if (filename.endsWith('.jpg') || filename.endsWith('.png')) {
+                // 如果是图片文件，打开新窗口显示
+                window.open(filePath, '_blank');
+            } else if (filename.endsWith('.txt')) {
+                // 如果是文本文件，使用 fetch 加载并显示内容
+                fetch(filePath)
+                    .then(response => response.text())
+                    .then(text => {
+                        alert(`文件内容:\n${text}`);
+                    })
+                    .catch(error => {
+                        alert(`无法加载文件: ${filename}`);
+                    });
+            } else {
+                alert(`不支持的文件类型: ${filename}`);
+            }
         }
     </script>
 </body>
