@@ -101,6 +101,7 @@
                 this.angle = Math.random() * Math.PI * 2; // 用于左右摆动
                 this.wind = Math.random() * 1 - 0.5; // 左右摆动幅度
                 this.opacity = Math.random(); // 随机透明度
+                this.frequencyIndex = Math.floor((this.y / canvas.height) * 256); // 绑定频率索引
             }
 
             draw() {
@@ -111,7 +112,7 @@
                 ctx.fill();
             }
 
-            update() {
+            update(frequencyData) {
                 // 正常飘落
                 this.y += this.speed;
                 this.x += Math.sin(this.angle) * this.wind;
@@ -120,42 +121,72 @@
                 if (this.y > canvas.height) {
                     this.y = Math.random() * -canvas.height;
                     this.x = Math.random() * canvas.width;
+                    this.frequencyIndex = Math.floor((this.y / canvas.height) * 256); // 重置频率索引
                 }
 
                 // 更新摆动角度
                 this.angle += 0.01;
 
-                // 随机改变透明度，模拟电视雪花效果
-                this.opacity = Math.random();
+                // 根据音频频率调整透明度
+                if (frequencyData) {
+                    const frequencyValue = frequencyData[this.frequencyIndex] / 255; // 归一化到 0-1
+                    this.opacity = frequencyValue; // 透明度与频率绑定
+                }
             }
         }
 
-        // 歌词粒子类（用于歌词显示）
-        class LyricParticle {
+        // 粒子类（用于初始图片粒子）
+        class Particle {
             constructor(x, y) {
                 this.x = x;
                 this.y = y;
-                this.size = Math.random() * 3 + 2; // 粒子大小
-                this.color = `rgba(255, 255, 255, ${Math.random()})`; // 白色，带有随机透明度
+                this.size = Math.random() * 2 + 1;
+                this.baseX = x; // 初始位置
+                this.baseY = y;
                 this.targetX = x; // 目标位置
                 this.targetY = y;
-                this.density = Math.random() * 10 + 5; // 用于平滑移动
+                this.density = Math.random() * 10 + 5;
+                this.color = `hsl(${Math.random() * 360}, 50%, 50%)`; // 随机颜色
+                this.angle = Math.random() * Math.PI * 2; // 用于漩涡效果
+                this.radius = Math.random() * 100 + 50; // 漩涡半径
+                this.speed = Math.random() * 0.02 + 0.01; // 漩涡速度
+                this.rotation = 0; // 旋转角度
             }
 
             draw() {
+                ctx.save(); // 保存画布状态
+                ctx.translate(this.x, this.y); // 将原点移动到粒子中心
+                ctx.rotate(this.rotation); // 旋转粒子
                 ctx.fillStyle = this.color;
                 ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.arc(0, 0, this.size, 0, Math.PI * 2); // 以新原点为中心绘制粒子
                 ctx.closePath();
                 ctx.fill();
+                ctx.restore(); // 恢复画布状态
             }
 
-            update() {
-                // 向目标位置移动
+            update(frequencyData) {
+                // 计算目标位置和当前位置的差值
                 const dx = this.targetX - this.x;
                 const dy = this.targetY - this.y;
+
+                // 逐渐向目标位置移动
                 this.x += dx / this.density;
                 this.y += dy / this.density;
+
+                // 根据音乐频率调整粒子大小和旋转角度
+                if (frequencyData) {
+                    const frequencyIndex = Math.floor((this.y / canvas.height) * frequencyData.length);
+                    const frequencyValue = frequencyData[frequencyIndex] / 255; // 归一化到 0-1
+                    this.size = 2 + frequencyValue * 5; // 粒子大小随频率变化
+                    this.rotation += frequencyValue * 0.2; // 增强旋转速度
+                }
+
+                // 确保粒子不会偏离屏幕
+                if (this.x < 0) this.x = 0;
+                if (this.x > canvas.width) this.x = canvas.width;
+                if (this.y < 0) this.y = 0;
+                if (this.y > canvas.height) this.y = canvas.height;
             }
 
             setTarget(x, y) {
@@ -190,7 +221,7 @@
                 for (let x = 0; x < canvas.width; x += particleDensity) {
                     const pixelIndex = (y * canvas.width + x) * 4;
                     if (imageData[pixelIndex] > 128) { // 如果像素是白色
-                        newParticles.push(new LyricParticle(x, y));
+                        newParticles.push(new Particle(x, y));
                     }
                 }
             }
@@ -237,7 +268,7 @@
                 for (let x = 0; x < canvas.width; x += particleDensity) {
                     const pixelIndex = (y * canvas.width + x) * 4;
                     if (imageData[pixelIndex] > 128) { // 如果像素是白色
-                        newParticles.push(new LyricParticle(x, y));
+                        newParticles.push(new Particle(x, y));
                     }
                 }
             }
@@ -306,7 +337,13 @@
             // 更新并绘制雪花
             snowflakes.forEach(snowflake => {
                 snowflake.draw();
-                snowflake.update();
+                snowflake.update(frequencyData);
+            });
+
+            // 更新并绘制封面图案粒子
+            particles.forEach(particle => {
+                particle.draw();
+                particle.update(frequencyData);
             });
 
             // 获取当前歌词
@@ -337,7 +374,7 @@
             // 更新并绘制歌词粒子
             lyricParticles.forEach(particle => {
                 particle.draw();
-                particle.update();
+                particle.update(frequencyData);
             });
 
             requestAnimationFrame(animate);
