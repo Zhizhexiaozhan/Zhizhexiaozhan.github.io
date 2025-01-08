@@ -91,7 +91,7 @@
         const fontSize = fontSizeMap[deviceType];
         const particleDensity = particleDensityMap[deviceType];
 
-        // 雪花类（用于歌词粒子）
+        // 雪花类（用于背景飘雪）
         class Snowflake {
             constructor(x, y) {
                 this.x = x || Math.random() * canvas.width; // 随机水平位置
@@ -100,9 +100,6 @@
                 this.speed = Math.random() * 1 + 0.5; // 下落速度
                 this.angle = Math.random() * Math.PI * 2; // 用于左右摆动
                 this.wind = Math.random() * 1 - 0.5; // 左右摆动幅度
-                this.targetX = null; // 目标位置
-                this.targetY = null;
-                this.density = Math.random() * 10 + 5; // 用于平滑移动
                 this.opacity = Math.random(); // 随机透明度
             }
 
@@ -115,95 +112,50 @@
             }
 
             update() {
-                if (this.targetX !== null && this.targetY !== null) {
-                    // 向目标位置移动
-                    const dx = this.targetX - this.x;
-                    const dy = this.targetY - this.y;
-                    this.x += dx / this.density;
-                    this.y += dy / this.density;
-                } else {
-                    // 正常飘落
-                    this.y += this.speed;
-                    this.x += Math.sin(this.angle) * this.wind;
+                // 正常飘落
+                this.y += this.speed;
+                this.x += Math.sin(this.angle) * this.wind;
 
-                    // 如果雪花飘出屏幕，重置到顶部
-                    if (this.y > canvas.height) {
-                        this.y = Math.random() * -canvas.height;
-                        this.x = Math.random() * canvas.width;
-                    }
-
-                    // 更新摆动角度
-                    this.angle += 0.01;
-
-                    // 随机改变透明度，模拟电视雪花效果
-                    this.opacity = Math.random();
+                // 如果雪花飘出屏幕，重置到顶部
+                if (this.y > canvas.height) {
+                    this.y = Math.random() * -canvas.height;
+                    this.x = Math.random() * canvas.width;
                 }
-            }
 
-            setTarget(x, y) {
-                this.targetX = x;
-                this.targetY = y;
-            }
+                // 更新摆动角度
+                this.angle += 0.01;
 
-            resetTarget() {
-                this.targetX = null;
-                this.targetY = null;
+                // 随机改变透明度，模拟电视雪花效果
+                this.opacity = Math.random();
             }
         }
 
-        // 粒子类（用于初始图片粒子）
-        class Particle {
+        // 歌词粒子类（用于歌词显示）
+        class LyricParticle {
             constructor(x, y) {
                 this.x = x;
                 this.y = y;
-                this.size = Math.random() * 2 + 1;
-                this.baseX = x; // 初始位置
-                this.baseY = y;
+                this.size = Math.random() * 3 + 2; // 粒子大小
+                this.color = `rgba(255, 255, 255, ${Math.random()})`; // 白色，带有随机透明度
                 this.targetX = x; // 目标位置
                 this.targetY = y;
-                this.density = Math.random() * 10 + 5;
-                this.color = `hsl(${Math.random() * 360}, 50%, 50%)`; // 随机颜色
-                this.angle = Math.random() * Math.PI * 2; // 用于漩涡效果
-                this.radius = Math.random() * 100 + 50; // 漩涡半径
-                this.speed = Math.random() * 0.02 + 0.01; // 漩涡速度
-                this.rotation = 0; // 旋转角度
+                this.density = Math.random() * 10 + 5; // 用于平滑移动
             }
 
             draw() {
-                ctx.save(); // 保存画布状态
-                ctx.translate(this.x, this.y); // 将原点移动到粒子中心
-                ctx.rotate(this.rotation); // 旋转粒子
                 ctx.fillStyle = this.color;
                 ctx.beginPath();
-                ctx.arc(0, 0, this.size, 0, Math.PI * 2); // 以新原点为中心绘制粒子
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
                 ctx.closePath();
                 ctx.fill();
-                ctx.restore(); // 恢复画布状态
             }
 
-            update(frequencyData) {
-                // 计算目标位置和当前位置的差值
+            update() {
+                // 向目标位置移动
                 const dx = this.targetX - this.x;
                 const dy = this.targetY - this.y;
-
-                // 逐渐向目标位置移动
                 this.x += dx / this.density;
                 this.y += dy / this.density;
-
-                // 根据音乐频率调整粒子大小和旋转角度
-                if (frequencyData) {
-                    // 修改频率索引计算方式：基于 y 坐标
-                    const frequencyIndex = Math.floor((this.y / canvas.height) * frequencyData.length);
-                    const frequencyValue = frequencyData[frequencyIndex] / 255; // 归一化到 0-1
-                    this.size = 2 + frequencyValue * 5; // 粒子大小随频率变化
-                    this.rotation += frequencyValue * 0.2; // 增强旋转速度
-                }
-
-                // 确保粒子不会偏离屏幕
-                if (this.x < 0) this.x = 0;
-                if (this.x > canvas.width) this.x = canvas.width;
-                if (this.y < 0) this.y = 0;
-                if (this.y > canvas.height) this.y = canvas.height;
             }
 
             setTarget(x, y) {
@@ -215,7 +167,9 @@
         // 加载封面图案
         const coverImage = new Image();
         coverImage.src = 'anime_girl.png'; // 确保图片路径正确
-        let particles = []; // 存储所有粒子
+        let particles = []; // 存储封面图案粒子
+        let snowflakes = []; // 存储雪花粒子
+        let lyricParticles = []; // 存储歌词粒子
 
         // 生成封面图案粒子
         function generateCoverParticles() {
@@ -236,7 +190,7 @@
                 for (let x = 0; x < canvas.width; x += particleDensity) {
                     const pixelIndex = (y * canvas.width + x) * 4;
                     if (imageData[pixelIndex] > 128) { // 如果像素是白色
-                        newParticles.push(new Particle(x, y));
+                        newParticles.push(new LyricParticle(x, y));
                     }
                 }
             }
@@ -244,7 +198,7 @@
             return newParticles;
         }
 
-        // 生成歌词粒子（使用雪花风格）
+        // 生成歌词粒子
         function generateLyricParticles(text) {
             // 将空格替换为换行符
             const formattedText = text.replace(/ /g, '\n');
@@ -283,7 +237,7 @@
                 for (let x = 0; x < canvas.width; x += particleDensity) {
                     const pixelIndex = (y * canvas.width + x) * 4;
                     if (imageData[pixelIndex] > 128) { // 如果像素是白色
-                        newParticles.push(new Snowflake(x, y));
+                        newParticles.push(new LyricParticle(x, y));
                     }
                 }
             }
@@ -339,7 +293,6 @@
         }, { once: true }); // 只监听一次点击事件
 
         // 动画循环
-        let isLyricActive = false;
         let currentLyricText = '';
 
         function animate() {
@@ -350,17 +303,23 @@
                 analyser.getByteFrequencyData(frequencyData);
             }
 
+            // 更新并绘制雪花
+            snowflakes.forEach(snowflake => {
+                snowflake.draw();
+                snowflake.update();
+            });
+
             // 获取当前歌词
             const currentLyric = getCurrentLyric();
             if (currentLyric && currentLyric !== currentLyricText) {
                 // 如果歌词发生变化，生成新的歌词粒子
-                const lyricParticles = generateLyricParticles(currentLyric);
+                const newLyricParticles = generateLyricParticles(currentLyric);
                 currentLyricText = currentLyric;
 
-                // 将现有粒子移动到歌词粒子的位置
-                particles.forEach((particle, index) => {
-                    if (lyricParticles[index]) {
-                        particle.setTarget(lyricParticles[index].x, lyricParticles[index].y);
+                // 将现有歌词粒子移动到新位置
+                lyricParticles.forEach((particle, index) => {
+                    if (newLyricParticles[index]) {
+                        particle.setTarget(newLyricParticles[index].x, newLyricParticles[index].y);
                     } else {
                         // 如果新状态的粒子数量少于旧状态，将多余的粒子移动到屏幕外
                         particle.setTarget(-100, -100);
@@ -368,21 +327,24 @@
                 });
 
                 // 如果新状态的粒子数量多于旧状态，添加新粒子
-                if (lyricParticles.length > particles.length) {
-                    for (let i = particles.length; i < lyricParticles.length; i++) {
-                        particles.push(lyricParticles[i]);
+                if (newLyricParticles.length > lyricParticles.length) {
+                    for (let i = lyricParticles.length; i < newLyricParticles.length; i++) {
+                        lyricParticles.push(newLyricParticles[i]);
                     }
                 }
             }
 
-            // 更新并绘制粒子
-            particles.forEach(particle => {
+            // 更新并绘制歌词粒子
+            lyricParticles.forEach(particle => {
                 particle.draw();
-                particle.update(frequencyData);
+                particle.update();
             });
 
             requestAnimationFrame(animate);
         }
+
+        // 初始化雪花
+        snowflakes = Array.from({ length: 500 }, () => new Snowflake());
 
         // 加载封面图案并生成粒子
         coverImage.onload = () => {
