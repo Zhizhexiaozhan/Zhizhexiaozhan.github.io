@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>闪烁粒子特效 - 愛、樂、星之卡比</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="effectCanvas"></canvas>
+
+    <script>
+        // 获取画布和上下文
+        const canvas = document.getElementById('effectCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // 定义文字和图案
+        const text1 = '愛'; // 第一个文字
+        const text2 = '樂'; // 第二个文字
+        const kirbyImageSrc = './kirby.png'; // 本地图片路径（根目录下）
+        let kirbyImage; // 星之卡比图片对象
+
+        // 加载星之卡比图片
+        const loadKirbyImage = () => {
+            kirbyImage = new Image();
+            kirbyImage.src = kirbyImageSrc;
+            kirbyImage.onload = () => {
+                generateParticlesFromImage(kirbyImage, (newParticles) => {
+                    targetParticles = newParticles;
+                });
+            };
+        };
+
+        // 闪烁雪花粒子类
+        class Snowflake {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 3 + 2; // 粒子大小
+                this.speed = Math.random() * 0.5 + 0.2; // 移动速度
+                this.angle = Math.random() * Math.PI * 2; // 随机角度
+                this.wind = Math.random() * 1 - 0.5; // 随机风力
+                this.targetX = x; // 目标位置
+                this.targetY = y;
+                this.density = Math.random() * 10 + 5; // 平滑移动
+                this.opacity = Math.random(); // 随机透明度
+                this.color = '#fff'; // 默认白色
+            }
+
+            draw() {
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`; // 闪烁效果
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            update() {
+                // 向目标位置移动
+                const dx = this.targetX - this.x;
+                const dy = this.targetY - this.y;
+                this.x += dx / this.density;
+                this.y += dy / this.density;
+
+                // 闪烁效果
+                this.opacity = Math.random();
+            }
+
+            setTarget(x, y) {
+                this.targetX = x;
+                this.targetY = y;
+            }
+
+            setColor(color) {
+                this.color = color;
+            }
+        }
+
+        // 生成粒子从文字
+        function generateParticlesFromText(text, fontSize, callback) {
+            const fontFamily = 'Arial';
+
+            ctx.font = `${fontSize}px ${fontFamily}`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // 计算文字位置
+            const textX = canvas.width / 2;
+            const textY = canvas.height / 2;
+
+            // 创建离屏Canvas
+            const offCanvas = document.createElement('canvas');
+            const offCtx = offCanvas.getContext('2d');
+            offCanvas.width = fontSize;
+            offCanvas.height = fontSize;
+            offCtx.font = `${fontSize}px ${fontFamily}`;
+            offCtx.textAlign = 'center';
+            offCtx.textBaseline = 'middle';
+            offCtx.fillStyle = '#fff';
+            offCtx.fillText(text, fontSize / 2, fontSize / 2);
+
+            // 获取像素数据
+            const imageData = offCtx.getImageData(0, 0, fontSize, fontSize).data;
+
+            // 生成新粒子
+            const newParticles = [];
+            for (let y = 0; y < fontSize; y += 5) {
+                for (let x = 0; x < fontSize; x += 5) {
+                    const pixelIndex = (y * fontSize + x) * 4;
+                    if (imageData[pixelIndex] > 128) { // 如果像素是白色
+                        const posX = x + textX - fontSize / 2;
+                        const posY = y + textY - fontSize / 2;
+                        newParticles.push(new Snowflake(posX, posY));
+                    }
+                }
+            }
+
+            if (callback) callback(newParticles);
+            return newParticles;
+        }
+
+        // 生成粒子从图片
+        function generateParticlesFromImage(image, callback) {
+            const offCanvas = document.createElement('canvas');
+            const offCtx = offCanvas.getContext('2d');
+            offCanvas.width = 200; // 图片宽度
+            offCanvas.height = 200; // 图片高度
+            offCtx.drawImage(image, 0, 0, 200, 200);
+
+            // 获取像素数据
+            const imageData = offCtx.getImageData(0, 0, 200, 200).data;
+
+            // 生成新粒子
+            const newParticles = [];
+            for (let y = 0; y < 200; y += 5) {
+                for (let x = 0; x < 200; x += 5) {
+                    const pixelIndex = (y * 200 + x) * 4;
+                    if (imageData[pixelIndex] > 128) { // 如果像素是白色
+                        const posX = x + canvas.width / 2 - 100;
+                        const posY = y + canvas.height / 2 - 100;
+                        const particle = new Snowflake(posX, posY);
+                        particle.setColor('#FF69B4'); // 粉色
+                        newParticles.push(particle);
+                    }
+                }
+            }
+
+            if (callback) callback(newParticles);
+            return newParticles;
+        }
+
+        // 初始化
+        let particles = [];
+        let targetParticles = [];
+        let currentStage = 0;
+
+        // 第一次生成“愛”字
+        particles = generateParticlesFromText(text1, 200);
+
+        // 点击事件
+        canvas.addEventListener('click', () => {
+            if (currentStage === 0) {
+                // 第一次点击：切换到“樂”字
+                targetParticles = generateParticlesFromText(text2, 200);
+                particles.forEach((particle, index) => {
+                    if (targetParticles[index]) {
+                        particle.setTarget(targetParticles[index].x, targetParticles[index].y);
+                    }
+                });
+                currentStage++;
+            } else if (currentStage === 1) {
+                // 第二次点击：粒子分散
+                particles.forEach(particle => {
+                    particle.setTarget(
+                        Math.random() * canvas.width,
+                        Math.random() * canvas.height
+                    );
+                });
+
+                // 延迟后生成星之卡比图案
+                setTimeout(() => {
+                    generateParticlesFromImage(kirbyImage, (newParticles) => {
+                        targetParticles = newParticles;
+                        particles = targetParticles; // 直接替换粒子数组
+                    });
+                }, 1000);
+                currentStage++;
+            }
+        });
+
+        // 动画循环
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 更新并绘制粒子
+            particles.forEach(particle => {
+                particle.draw();
+                particle.update();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        // 加载星之卡比图片
+        loadKirbyImage();
+
+        animate();
+    </script>
+</body>
+</html>
